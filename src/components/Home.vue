@@ -70,7 +70,7 @@ const handleJump = (href, isDirectory) => {
     href = href.replace(`/dav${import.meta.env.VITE_ROOT_PATH}`, '')
     routerr.push('/file/' + href);
   } else {
-    routerr.push(`/video?url1=${import.meta.env.VITE_ALIST_URL.slice(0, -1)}` + href.replace('pptVideo', 'teacherTrack') + `&url2=${import.meta.env.VITE_ALIST_URL.slice(0, -1)}a` + href.replace('teacherTrack', 'pptVideo'))
+    routerr.push(`/video?url1=${import.meta.env.VITE_ALIST_URL.slice(0, -1)}` + href.replace('pptVideo', 'teacherTrack') + `&url2=${import.meta.env.VITE_ALIST_URL.slice(0, -1)}` + href.replace('teacherTrack', 'pptVideo'))
   }
 
 }

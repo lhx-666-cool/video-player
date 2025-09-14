@@ -21,21 +21,41 @@
           type="text" v-model="link2" placeholder="Input link 2">
       </div>
       <div class="btns flex justify-center mt-4 gap-2 overflow-visible">
-        <button ref="load" id="loadVideosBtn" class="bg-sky-600 p-1 pl-4 pr-4 rounded-md" @click="handleLoad">
+        <button ref="load" id="loadVideosBtn"
+          class="bg-[#1668DC] p-1 pl-4 pr-4 rounded-md hover:bg-[#3C89E8] transition-all duration-100 ease-in-out"
+          @click="handleLoad">
           Load
         </button>
         <div class="relative w-20">
           <div class="absolute z-100" @mouseenter="speedController = true" @mouseleave="speedController = false">
             <button ref="change" @click="handleChangeSpeed" id="changeVideoBtn"
-              class="bg-sky-600 p-1 pl-4 pr-4 rounded-md w-20">
+              class="bg-[#1668DC] p-1 pl-4 pr-4 rounded-md w-20 hover:bg-[#3C89E8] transition-all duration-100 ease-in-out">
               Speed
             </button>
-            <div class="list w-20 bg-stone-700 mt-1 rounded-md h-30 overflow-y-scroll" v-show="speedController">
-              <div @click="handleChangeSpeed(i)" v-for="i in speedList" :key="i" class="p-1 text-sm text-center cursor hover:bg-stone-800 cursor-pointer">
+            <div class="list w-20 bg-[#1f1f1f] mt-1 rounded-md h-30 overflow-y-scroll" v-show="speedController">
+              <div @click="handleChangeSpeed(i)" v-for="i in speedList" :key="i"
+                class="p-1 text-sm text-center cursor hover:bg-[#313131] cursor-pointer">
                 {{ i }}
               </div>
             </div>
           </div>
+        </div>
+        <div class="flex gap-1">
+          <button class="bg-[#1668DC] p-1 rounded-md w-10 hover:bg-[#3C89E8] transition-all duration-100 ease-in-out" @click="delta -= 60">
+            << 
+          </button>
+          <button class="bg-[#1668DC] p-1 rounded-md w-8 hover:bg-[#3C89E8] transition-all duration-100 ease-in-out" @click="delta -= 10">
+            < 
+          </button>
+          <div class="border-1 border-[#424242] rounded-md leading-[32px] pl-4 pr-4 select-none">
+            {{ delta }} s
+          </div>
+          <button class="bg-[#1668DC] p-1 rounded-md w-10 hover:bg-[#3C89E8] transition-all duration-100 ease-in-out" @click="delta += 10">
+            >
+          </button>
+          <button class="bg-[#1668DC] p-1 rounded-md w-8 hover:bg-[#3C89E8] transition-all duration-100 ease-in-out" @click="delta += 60">
+            >>
+          </button>
         </div>
       </div>
     </div>
@@ -54,7 +74,7 @@
 </template>
 <script setup>
 
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const link1 = ref('');
@@ -70,6 +90,7 @@ const route = useRoute()
 const speedController = ref(false);
 
 const speedList = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+const delta = ref(0)
 
 onMounted(() => {
   if (route.query.url1 && route.query.url1 !== '') {
@@ -155,8 +176,8 @@ const handelV1Seeked = () => {
   isSyncing.value = true;
   console.log(`Video 1 Seeked -> Syncing Video 2 to ${v1.value.currentTime}`);
   // 检查时间差，避免微小差异导致循环seek
-  if (Math.abs(v1.value.currentTime - v2.value.currentTime) > 0.1) {
-    v2.value.currentTime = v1.value.currentTime;
+  if (Math.abs(v1.value.currentTime + delta.value - v2.value.currentTime) > 0.1) {
+    v2.value.currentTime = v1.value.currentTime + delta.value;
     v1.value.play();
     v2.value.play();
   }
@@ -168,13 +189,17 @@ const handleV2Seeked = () => {
   if (isSyncing.value) return;
   isSyncing.value = true;
   console.log(`Video 2 Seeked -> Syncing Video 1 to ${v2.value.currentTime}`);
-  if (Math.abs(v2.value.currentTime - v1.value.currentTime) > 0.1) {
-    v1.value.currentTime = v2.value.currentTime;
+  if (Math.abs(v2.value.currentTime - v1.value.currentTime - delta.value) > 0.1) {
+    v1.value.currentTime = v2.value.currentTime - delta.value;
     v1.value.play();
     v2.value.play();
   }
   setTimeout(() => { isSyncing.value = false; }, 1000);
 }
+
+watch(delta, () => {
+  handelV1Seeked();
+})
 
 // --- State ---
 const containerRef = ref(null); // 容器元素的引用
@@ -198,6 +223,16 @@ const RESIZER_WIDTH = 5;   // 拖拽条的宽度 (px) - 应与CSS中的宽度匹
 
 onMounted(() => {
   leftPaneWidth.value = window.innerWidth / 2;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') {
+      v1.value.currentTime += 10;
+      v2.value.currentTime += 10;
+      handelV1Seeked();
+    }else if (e.key === 'ArrowLeft') {
+      v1.value.currentTime -= 10;
+      v2.value.currentTime -= 10;
+    }
+  })
 })
 
 // 鼠标按下，开始拖拽
@@ -264,6 +299,7 @@ const stopDrag = () => {
 // 组件卸载前清理事件监听器，防止内存泄漏
 onBeforeUnmount(() => {
   stopDrag(); // 确保拖拽状态被重置，监听器被移除
+  document.removeEventListener('keydown')
 });
 
 </script>
